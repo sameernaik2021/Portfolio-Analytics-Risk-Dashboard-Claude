@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Portfolio Analytics &amp; Risk Dashboard</title>
+<style>
+:root{--bg:#eef1ee;--card:#fff;--ink:#16222b;--mut:#5b6b75;--line:#d6ddd9;--acc:#0f766e;--bad:#b91c1c;--warn:#b45309;--ok:#15803d;--info:#1d4ed8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1a20;--card:#15252d;--ink:#e6eef0;--mut:#93a8b0;--line:#27404a;--acc:#2dd4bf;--bad:#f87171;--warn:#fbbf24;--ok:#4ade80;--info:#7aa2ff}}
+:root[data-theme="dark"]{--bg:#0e1a20;--card:#15252d;--ink:#e6eef0;--mut:#93a8b0;--line:#27404a;--acc:#2dd4bf;--bad:#f87171;--warn:#fbbf24;--ok:#4ade80;--info:#7aa2ff}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h2,.big{font-family:Georgia,"Iowan Old Style",serif;font-weight:600;margin:0}
+h1{font-size:24px}h2{font-size:16px;margin-bottom:8px}
+header{padding:16px 20px 4px;display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;justify-content:space-between}
+header p{margin:2px 0 0;color:var(--mut);font-size:12px}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:12px;color:var(--mut)}
+.ctl label{display:flex;gap:4px;align-items:center}
+input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:3px 5px}
+input[type=number]{width:58px}
+main{padding:12px 20px 24px;display:grid;gap:14px;grid-template-columns:repeat(12,minmax(0,1fr))}
+.c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.s12{grid-column:span 12}.s8{grid-column:span 8}.s7{grid-column:span 7}.s6{grid-column:span 6}.s5{grid-column:span 5}.s4{grid-column:span 4}
+@media(max-width:900px){.s8,.s7,.s6,.s5,.s4{grid-column:span 12}}
+.hero{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
+@media(max-width:600px){.hero{grid-template-columns:1fr}}
+.big{font-size:56px;line-height:1}.mut{color:var(--mut)}.sm{font-size:12px}
+.kp{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.kp div{border-left:3px solid var(--acc);padding:2px 8px}.kp b{display:block;font-size:19px;font-family:Georgia,serif}
+.kp span{font-size:11px;color:var(--mut)}
+.pos{color:var(--ok)}.neg{color:var(--bad)}
+svg{width:100%;height:auto;display:block}.t{fill:var(--mut);font-size:11px}.gl{stroke:var(--line);stroke-width:1}
+.lg{font-size:12px;color:var(--mut);display:flex;gap:14px;flex-wrap:wrap;margin-top:4px}.lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+.br{display:grid;grid-template-columns:96px 1fr 92px;gap:8px;align-items:center;margin:5px 0;font-size:12px}
+.tr{position:relative;height:12px;background:var(--bg);border-radius:6px}.tr i{position:absolute;left:0;top:0;bottom:0;border-radius:6px}
+.tr b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}.br em{font-style:normal;text-align:right}
+table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:5px 6px;text-align:right;border-bottom:1px solid var(--line)}th:first-child,td:first-child{text-align:left}
+.tw{overflow-x:auto}.hm td{text-align:center;padding:6px 2px;min-width:34px}
+.rec{border-left:4px solid var(--info);padding:4px 10px;margin:8px 0}.rec b{display:block}
+.rec.bad{border-color:var(--bad)}.rec.warn{border-color:var(--warn)}.rec.ok{border-color:var(--ok)}
+footer{padding:0 20px 20px;font-size:12px;color:var(--mut)}
+</style></head><body>
+<header>
+ <div><h1>Portfolio Analytics &amp; Risk Dashboard</h1><p>Returns, risk, diversification and a rules-plus-optimizer strategy engine. Prices are a seeded 2-year simulation; swap in real data for live use.</p></div>
+ <div class="ctl">
+  <label>Risk-free %<input id="rf" type="number" value="6.5" step="0.1" min="0" max="20"></label>
+  Target %:
+  <label>Equity<input id="tEquity" type="number" value="60" min="0" max="100"></label>
+  <label>Bonds<input id="tBonds" type="number" value="25" min="0" max="100"></label>
+  <label>Gold<input id="tGold" type="number" value="10" min="0" max="100"></label>
+  <label>Cash<input id="tCash" type="number" value="5" min="0" max="100"></label>
+  <label>Market move <input id="sl" type="range" min="-50" max="20" value="-20"> <span id="slv">-20%</span></label>
+ </div>
+</header>
+<main id="app"></main>
+<footer><span id="st"></span><br>Educational analytics on simulated data. Not investment advice; consult a SEBI-registered adviser before acting. Risk metrics use the current weights over the past 504 trading days and describe history, not the future.</footer>
+<script>
+'use strict';
+const N=252,T=504,$=s=>document.querySelector(s);
+const rng=s=>()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const nrm=g=>{let u=0;while(!u)u=g();return Math.sqrt(-2*Math.log(u))*Math.cos(6.283185307179586*g())};
+const sum=a=>a.reduce((x,y)=>x+y,0),mean=a=>sum(a)/a.length;
+const cov=(a,b)=>{const ma=mean(a),mb=mean(b);let s=0;for(let i=0;i<a.length;i++)s+=(a[i]-ma)*(b[i]-mb);return s/(a.length-1)};
+const sd=a=>Math.sqrt(cov(a,a));
+const inr=new Intl.NumberFormat('en-IN',{maximumFractionDigits:0});
+const rs=x=>(x<0?'−':'')+'₹'+inr.format(Math.abs(x)),pc=(x,d=1)=>(x*100).toFixed(d)+'%',sp=(x,d=1)=>(x<0?'−':'+')+Math.abs(x*100).toFixed(d)+'%';
+const cz=x=>x<0?'neg':'pos';
+// asset: [symbol,name,class,sector,qty,startPrice,beta(sim),idioVol,annualDrift,buyDay]
+const A=[['HDFCBANK','HDFC Bank','Equity','Financials',80,1600,1,.12,.13,60],['ICICIBANK','ICICI Bank','Equity','Financials',110,950,1.1,.13,.14,120],
+['RELIANCE','Reliance','Equity','Energy',35,2400,.95,.15,.11,40],['INFY','Infosys','Equity','IT',55,1500,.8,.17,.12,200],
+['SUNPHARMA','Sun Pharma','Equity','Healthcare',50,1500,.6,.18,.15,90],['NIFTYBEES','Nifty 50 ETF','Equity','Diversified',300,240,1,.015,.11,10],
+['GILTBEES','Gilt ETF','Bonds','Government',1400,100,.03,.03,.07,0],['GOLDBEES','Gold ETF','Gold','Commodity',1600,55,0,.13,.10,150],
+['LIQUIDBEES','Liquid fund','Cash','Cash',34,1000,0,0,.06,0]];
+const CL=['Equity','Bonds','Gold','Cash'],n=A.length,Q=A.map(a=>a[4]);
+// ---- seeded market simulation (market factor + idiosyncratic noise, one crash episode) ----
+const R0=rng(20260930),mr=[],P=A.map(a=>[a[5]]);
+for(let t=1;t<=T;t++){let m=.10/N+.0105*nrm(R0);if(t>=250&&t<285)m-=.006;mr.push(m)}
+A.forEach((a,i)=>{for(let t=1;t<=T;t++){const z=nrm(R0);let r=a[2]==='Cash'?.06/N:(a[8]-a[6]*.10)/N+a[6]*mr[t-1]+a[7]/Math.sqrt(N)*z;
+ if(a[2]==='Gold'&&t>=250&&t<285)r+=.002;P[i].push(P[i][t-1]*(1+r))}});
+const RT=P.map(p=>p.slice(1).map((v,t)=>v/p[t]-1));
+const bi=RT.map(r=>cov(r,mr)/cov(mr,mr));
+const S=RT.map(a=>RT.map(b=>cov(a,b)*N));
+const CR=S.map((r,i)=>r.map((x,j)=>i===j?1:(S[i][i]*S[j][j]>1e-14?x/Math.sqrt(S[i][i]*S[j][j]):0)));
+// ---- algorithms ----
+function maxDD(v){let pk=-Infinity,m=0;const d=v.map(x=>{pk=Math.max(pk,x);const q=x/pk-1;m=Math.min(m,q);return q});return{d,m}}
+function xirr(cf){const f=r=>sum(cf.map(([t,a])=>a/Math.pow(1+r,t)));let lo=-.9999,hi=100;if(f(lo)*f(hi)>0)return NaN;
+ for(let k=0;k<200;k++){const m=(lo+hi)/2;f(lo)*f(m)<=0?hi=m:lo=m}return(lo+hi)/2}
+function pcap(v,cap){let lo=Math.min(...v)-cap,hi=Math.max(...v);
+ for(let k=0;k<60;k++){const tau=(lo+hi)/2;sum(v.map(x=>Math.min(cap,Math.max(0,x-tau))))>1?lo=tau:hi=tau}
+ const tau=(lo+hi)/2;return v.map(x=>Math.min(cap,Math.max(0,x-tau)))}
+const mv=(M,w)=>M.map(r=>sum(r.map((x,j)=>x*w[j])));
+function optimize(mu,rf,cap,mode){let w=Array(n).fill(1/n);
+ for(let k=0;k<2500;k++){const Sw=mv(S,w),s=Math.sqrt(sum(w.map((x,i)=>x*Sw[i])));let g,st;
+  if(mode==='mv'){g=Sw.map(x=>-2*x);st=1.5}else{const e=sum(w.map((x,i)=>x*mu[i]))-rf;g=mu.map((m,i)=>m/s-e*Sw[i]/(s*s*s));st=.3/(1+k/300)}
+  w=pcap(w.map((x,i)=>x+st*g[i]),cap)}return w}
+function mc(mu,sg,V0){const g=rng(7),paths=[];for(let k=0;k<400;k++){const p=[V0];for(let t=1;t<=N;t++)p.push(p[t-1]*Math.exp((mu-sg*sg/2)/N+sg/Math.sqrt(N)*nrm(g)));paths.push(p)}
+ const q=f=>Array.from({length:N+1},(_,t)=>{const c=paths.map(p=>p[t]).sort((a,b)=>a-b);return c[Math.floor(f*(c.length-1))]});
+ return{p5:q(.05),p25:q(.25),p50:q(.5),p75:q(.75),p95:q(.95),loss:paths.filter(p=>p[N]<V0).length/paths.length}}
+// ---- core analytics ----
+function compute(){const rf=(+$('#rf').value||0)/100;
+ const cur=A.map((a,i)=>Q[i]*P[i][T]),V=sum(cur),w=cur.map(x=>x/V),cost=A.map((a,i)=>Q[i]*P[i][a[9]]),C=sum(cost);
+ const prev=sum(A.map((a,i)=>Q[i]*P[i][T-1]));
+ const rp=[];for(let t=0;t<T;t++){let s=0;for(let i=0;i<n;i++)s+=w[i]*RT[i][t];rp.push(s)}
+ const nav=[100],bn=[100];rp.forEach((r,t)=>{nav.push(nav[t]*(1+r));bn.push(bn[t]*(1+mr[t]))});
+ const dd=maxDD(nav),mu_=mean(rp)*N,vol=sd(rp)*Math.sqrt(N),sharpe=(mu_-rf)/vol;
+ const dn=Math.sqrt(mean(rp.map(r=>Math.min(r-rf/N,0)**2)))*Math.sqrt(N),sortino=(mu_-rf)/dn;
+ const beta=cov(rp,mr)/cov(mr,mr),bm=mean(mr)*N,alpha=(mu_-rf)-beta*(bm-rf);
+ const so=[...rp].sort((a,b)=>a-b),k5=Math.floor(.05*T),var95=-so[k5],cvar=-mean(so.slice(0,k5+1));
+ const Sw=mv(S,w),pv=sum(w.map((x,i)=>x*Sw[i])),rc=w.map((x,i)=>x*Sw[i]/pv);
+ const hhi=sum(w.map(x=>x*x)),effN=1/hhi,divR=sum(w.map((x,i)=>x*Math.sqrt(S[i][i])))/Math.sqrt(pv);
+ const cf=A.map((a,i)=>[a[9]/N,-cost[i]]).filter(c=>c[1]!==0);cf.push([T/N,V]);
+ const cls={};CL.forEach(c=>cls[c]=sum(cur.filter((_,i)=>A[i][2]===c)));
+ const sec={};A.forEach((a,i)=>{if(a[2]==='Equity'&&a[3]!=='Diversified')sec[a[3]]=(sec[a[3]]||0)+w[i]});
+ const tg=CL.map(c=>+$('#t'+c).value||0),tt=sum(tg)||1,tgt={};CL.forEach((c,i)=>tgt[c]=tg[i]/tt);
+ const mu=A.map((a,i)=>.5*mean(RT[i])*N+.5*(rf+bi[i]*.055)),cap=.25;
+ const ps=x=>{const r=sum(x.map((y,i)=>y*mu[i])),v=Math.sqrt(sum(x.map((y,i)=>y*mv(S,x)[i])));return{r,v,s:(r-rf)/v}};
+ const rc_=rng(11),cloud=[];for(let k=0;k<1200;k++){const e=A.map(()=>-Math.log(rc_()||1e-9)),z=sum(e);cloud.push(Object.assign({w:pcap(e.map(x=>x/z),cap)},{}))}
+ cloud.forEach(c=>Object.assign(c,ps(c.w)));
+ let wS=optimize(mu,rf,cap,'sh');const bc=cloud.reduce((a,b)=>b.s>a.s?b:a);if(ps(bc.w).s>ps(wS).s)wS=bc.w;
+ const wM=optimize(mu,rf,cap,'mv'),cu=ps(w),oS=ps(wS),oM=ps(wM);
+ const sim=mc(cu.r,cu.v,V);
+ return{rf,cur,V,w,cost,C,prev,rp,nav,bn,dd,mu_,vol,sharpe,sortino,beta,alpha,var95,cvar,rc,hhi,effN,divR,xirr:xirr(cf),cls,sec,tgt,mu,S,cloud,wS,wM,cu,oS,oM,sim,bmR:bn[T]/100-1,cagr:Math.pow(nav[T]/100,N/T)-1}}
+// ---- chart helpers ----
+function line(ser,o={}){const W=640,H=o.h||220,L=46,Rr=8,Tp=8,Bt=8;const all=ser.flatMap(s=>[...s.d,...(s.b||[])]);
+ const lo=Math.min(...all),hi=Math.max(...all),len=ser[0].d.length,X=i=>L+i/(len-1)*(W-L-Rr),Y=v=>Tp+(hi-v)/(hi-lo||1)*(H-Tp-Bt);let g='';
+ for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4,y=Y(v);g+=`<line x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}" class="gl"/><text x="${L-5}" y="${y+4}" text-anchor="end" class="t">${(o.f||(x=>x.toFixed(0)))(v)}</text>`}
+ ser.forEach(s=>{const p=s.d.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`);
+  if(s.area)g+=`<polygon points="${X(0)},${Y(hi)} ${p.join(' ')} ${X(len-1)},${Y(hi)}" fill="${s.c}" opacity=".25"/>`;
+  if(s.b)g+=`<polygon points="${p.join(' ')} ${s.b.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).reverse().join(' ')}" fill="${s.c}" opacity=".2"/>`;
+  else g+=`<polyline points="${p.join(' ')}" fill="none" stroke="${s.c}" stroke-width="${s.wd||1.8}"/>`});
+ return`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.a}">${g}</svg>`}
+const bar=(l,v,mx,c,ex,tick)=>`<div class="br"><span>${l}</span><div class="tr"><i style="width:${Math.max(0,Math.min(100,v/mx*100))}%;background:${c}"></i>${tick!=null?`<b style="left:${Math.min(100,tick/mx*100)}%"></b>`:''}</div><em>${ex}</em></div>`;
+function scat(M){const W=640,H=250,L=46,B=26,pts=M.cloud,ex=[M.cu,M.oS,M.oM,...pts];
+ const x0=Math.min(...ex.map(p=>p.v))-.005,x1=Math.max(...ex.map(p=>p.v))+.005,y0=Math.min(...ex.map(p=>p.r))-.005,y1=Math.max(...ex.map(p=>p.r))+.005;
+ const X=v=>L+(v-x0)/(x1-x0)*(W-L-10),Y=v=>8+(y1-v)/(y1-y0)*(H-8-B),s0=Math.min(...pts.map(p=>p.s)),s1=Math.max(...pts.map(p=>p.s));
+ let g='';for(let k=0;k<=4;k++){const yv=y0+(y1-y0)*k/4,xv=x0+(x1-x0)*k/4;g+=`<line x1="${L}" x2="${W-10}" y1="${Y(yv)}" y2="${Y(yv)}" class="gl"/><text x="${L-5}" y="${Y(yv)+4}" text-anchor="end" class="t">${pc(yv,0)}</text><text x="${X(xv)}" y="${H-8}" text-anchor="middle" class="t">${pc(xv,0)}</text>`}
+ pts.forEach(p=>g+=`<circle cx="${X(p.v).toFixed(1)}" cy="${Y(p.r).toFixed(1)}" r="2.3" fill="hsl(${10+140*(p.s-s0)/(s1-s0||1)},65%,48%)" opacity=".55"/>`);
+ [[M.cu,'Current','var(--ink)'],[M.oS,'Max Sharpe','var(--acc)'],[M.oM,'Min variance','var(--info)']].forEach(([p,l,c])=>g+=`<circle cx="${X(p.v)}" cy="${Y(p.r)}" r="6" fill="${c}" stroke="var(--card)" stroke-width="2"/><text x="${X(p.v)+9}" y="${Y(p.r)+4}" class="t" style="fill:var(--ink)">${l}</text>`);
+ return`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Efficient frontier: expected return versus volatility for 1,200 random long-only portfolios">${g}</svg>`}
+// ---- render ----
+function render(){const M=compute(),{V,w,cls,tgt,sec}=M,sl=+$('#sl').value/100;$('#slv').textContent=(sl*100)+'%';
+ const recs=[],add=(k,h,d)=>recs.push({k,h,d});let pen=0;
+ const drift=CL.map(c=>cls[c]/V-tgt[c]),dsum=sum(drift.map(Math.abs))/2;pen+=Math.min(25,dsum*120);
+ CL.forEach((c,i)=>{const d=drift[i];if(Math.abs(d)>.05)add(Math.abs(d)>.1?'bad':'warn',`${c} is ${(Math.abs(d)*100).toFixed(1)} pp ${d>0?'above':'below'} target`,`${d>0?'Sell':'Buy'} about ${rs(Math.abs(d)*V)} of ${c} to return to ${pc(tgt[c],0)}. Prefer routing new contributions to the underweight class first; it avoids tax and transaction costs.`)});
+ const top=w.map((x,i)=>[x,i]).filter(([x,i])=>A[i][3]!=='Diversified'&&A[i][2]==='Equity').sort((a,b)=>b[0]-a[0]);
+ top.filter(([x])=>x>.15).forEach(([x,i])=>{pen+=Math.min(15,(x-.15)*200);add(x>.2?'bad':'warn',`${A[i][1]} is ${pc(x)} of the portfolio`,`Single-stock risk. Trimming to 15% frees about ${rs((x-.15)*V)} for underweight assets.`)});
+ const sk=Object.entries(sec).sort((a,b)=>b[1]-a[1]);if(sk[0]&&sk[0][1]>.3){pen+=Math.min(15,(sk[0][1]-.3)*150);add('warn',`${sk[0][0]} is ${pc(sk[0][1])} of portfolio value`,'Holdings in one sector tend to fall together. Add exposure to sectors that are absent or small rather than adding to this one.')}
+ if(M.effN<6){pen+=Math.min(20,(8-M.effN)*3);add('warn',`Effective number of holdings is ${M.effN.toFixed(1)} (of ${n})`,'Effective N = 1 / Σw². A low value means a few positions dominate. Even weights across the same assets would give the highest value.')}
+ const rk=M.rc.map((r,i)=>[r,i]).filter(([r,i])=>r>.12&&r>1.6*w[i]).sort((a,b)=>b[0]-a[0])[0];
+ if(rk)add('warn',`${A[rk[1]][1]} supplies ${pc(rk[0],0)} of total risk from ${pc(w[rk[1]],0)} of capital`,'Its volatility and correlation to the rest of the portfolio are high relative to its size.');
+ if(M.sharpe<1)pen+=Math.min(15,(1-M.sharpe)*10);if(M.dd.m<-.15)pen+=Math.min(10,(-M.dd.m-.15)*80);
+ const cd=M.dd.d[T];if(cd<-.07)add('warn',`Portfolio is ${pc(-cd)} below its peak`,'Decide in advance whether you rebalance, hold, or add during drawdowns, and avoid reacting to headlines.');
+ if(M.oS.s>M.cu.s+.15)add('info',`A better risk-adjusted mix exists (Sharpe ${M.cu.s.toFixed(2)} → ${M.oS.s.toFixed(2)})`,'The optimizer (max Sharpe, long-only, 25% cap per asset, shrunk expected returns) suggests the weights in the table below.');
+ if(M.beta>1.1)add('warn',`Beta is ${M.beta.toFixed(2)}`,'The portfolio amplifies market moves. Add bonds or gold if that exceeds your risk tolerance.');
+ else if(M.beta<.6)add('info',`Beta is ${M.beta.toFixed(2)}`,'Defensive positioning. Confirm it fits your return goal and time horizon.');
+ if(dsum<.02&&!recs.some(r=>r.k==='bad'))add('ok','Allocation is close to target','Keep investing on schedule and review at fixed intervals or when any class drifts more than 5 pp.');
+ pen=Math.min(100,pen);const score=Math.round(100-pen),verdict=score>=80?'Well balanced':score>=60?'Needs attention':'Action needed';
+ const order={bad:0,warn:1,info:2,ok:3};recs.sort((a,b)=>order[a.k]-order[b.k]);
+ const g=M.C?M.V-M.C:0,cl=x=>`<span class="${cz(x)}">`;
+ const kp=[['Portfolio value',rs(V),`Today ${rs(V-M.prev)} (${sp(V/M.prev-1,2)})`],['Invested',rs(M.C),'Cost basis'],['Total gain',rs(g),sp(g/M.C)],['XIRR',pc(M.xirr),'Money-weighted, annualised'],
+ ['Return vs Nifty',sp(M.cagr-(Math.pow(M.bn[T]/100,N/T)-1)),`Annualised; you ${pc(M.cagr)}`],['Volatility',pc(M.vol),'Annualised std. dev.'],['Sharpe',M.sharpe.toFixed(2),`Risk-free ${pc(M.rf)}`],['Sortino',M.sortino.toFixed(2),'Downside-only risk'],
+ ['Max drawdown',pc(M.dd.m),`Now ${pc(cd)}`],['Beta',M.beta.toFixed(2),`Alpha ${sp(M.alpha)}/yr`],['1-day VaR 95%',rs(M.var95*V),`CVaR ${rs(M.cvar*V)}`],['Diversification',M.effN.toFixed(1),`Ratio ${M.divR.toFixed(2)}`]];
+ const scen=[['Market −10%',-.1],['Market −20%',-.2],['Market −30%',-.3],[`Your slider (${sl*100}%)`,sl]].map(([l,s])=>[l,s,-.1*s,-.25*s]).concat([['Interest rates +1%',-.03,-.06,0],['Gold +10%',0,0,.1]]);
+ const imp=sc=>sum(A.map((a,i)=>M.cur[i]*(a[2]==='Equity'?bi[i]*sc[1]:a[2]==='Bonds'?sc[2]:a[2]==='Gold'?sc[3]:0)));
+ const si=scen.map(sc=>[sc[0],imp(sc)]),sm=Math.max(...si.map(x=>Math.abs(x[1])))||1;
+ const fmt=v=>pc(v,0),sim=M.sim,
+ hm=`<div class="tw"><table class="hm"><tr><td></td>${A.map(a=>`<td class="t">${a[0].slice(0,4)}</td>`).join('')}</tr>${CR.map((r,i)=>`<tr><td class="t">${A[i][0].slice(0,6)}</td>${r.map(c=>`<td style="background:${c>=0?`rgba(15,118,110,${c*.75})`:`rgba(185,28,28,${-c*.75})`}">${c.toFixed(2)}</td>`).join('')}</tr>`).join('')}</table></div>`;
+ $('#app').innerHTML=`
+ <section class="c s12 hero"><div><div class="big" style="color:var(--${score>=80?'ok':score>=60?'warn':'bad'})">${score}</div><div class="sm mut">Health score / 100</div></div>
+  <div><h2>${verdict}</h2><div class="sm mut" style="margin-bottom:6px">Penalties for allocation drift, concentration, weak risk-adjusted return and deep drawdown.</div>${recs.slice(0,3).map(r=>`<div class="rec ${r.k}"><b>${r.h}</b>${r.d}</div>`).join('')}</div></section>
+ <section class="c s12"><div class="kp">${kp.map(([a,b,c])=>`<div><span>${a}</span><b>${b}</b><span>${c}</span></div>`).join('')}</div></section>
+ <section class="c s8"><h2>Growth of 100 vs Nifty-style benchmark</h2>${line([{d:M.bn,c:'#94a3b8'},{d:M.nav,c:'var(--acc)'}],{a:'Portfolio growth versus benchmark'})}
+  <div class="lg"><span><i style="background:var(--acc)"></i>Portfolio ${sp(M.nav[T]/100-1)}</span><span><i style="background:#94a3b8"></i>Benchmark ${sp(M.bmR)}</span></div>
+  <h2 style="margin-top:12px">Underwater chart (drawdown)</h2>${line([{d:M.dd.d,c:'var(--bad)',area:1}],{h:110,f:x=>pc(x,0),a:'Drawdown from peak'})}</section>
+ <section class="c s4"><h2>Allocation vs target</h2>${CL.map(c=>bar(c,cls[c]/V,1,'var(--acc)',`${pc(cls[c]/V)} / ${pc(tgt[c],0)}`,tgt[c])).join('')}
+  <div class="sm mut">Bar = actual, black tick = target.</div><h2 style="margin-top:12px">Equity sectors</h2>${sk.map(([k,v])=>bar(k,v,.5,v>.3?'var(--warn)':'var(--info)',pc(v),.3)).join('')}<div class="sm mut">Tick = 30% sector guide.</div></section>
+ <section class="c s6"><h2>Where the risk comes from</h2>${A.map((a,i)=>bar(a[0],M.rc[i],.4,M.rc[i]>1.6*w[i]&&M.rc[i]>.12?'var(--warn)':'var(--acc)',`${pc(M.rc[i],0)} risk / ${pc(w[i],0)} wt`,w[i])).join('')}<div class="sm mut">Bar = share of portfolio variance, tick = capital weight. Bar past the tick means the asset adds more risk than money.</div></section>
+ <section class="c s6"><h2>Correlation matrix</h2>${hm}<div class="sm mut">Teal = move together, red = move opposite. Lower correlations diversify better.</div></section>
+ <section class="c s6"><h2>Efficient frontier</h2>${scat(M)}<div class="sm mut">x: volatility, y: expected return (half history, half CAPM). Colour = Sharpe (red low, green high).</div></section>
+ <section class="c s6"><h2>1-year Monte Carlo outlook</h2>${line([{d:sim.p95,b:sim.p5,c:'#0f766e'},{d:sim.p75,b:sim.p25,c:'#0f766e'},{d:sim.p50,c:'var(--ink)',wd:1.6}],{f:x=>'₹'+(x/1e5).toFixed(1)+'L',a:'Monte Carlo fan chart'})}
+  <div class="sm mut">Median ${rs(sim.p50[N])}; 5–95% range ${rs(sim.p5[N])} to ${rs(sim.p95[N])}; chance of a loss ${pc(sim.loss,0)} (400 paths, lognormal).</div></section>
+ <section class="c s5"><h2>Stress tests (estimates, not forecasts)</h2>${si.map(([l,v])=>bar(l,Math.abs(v),sm,v<0?'var(--bad)':'var(--ok)',`${rs(v)} (${sp(v/V)})`)).join('')}<div class="sm mut">Equity moves by each holding's beta; bonds and gold move against equities in market shocks.</div></section>
+ <section class="c s7"><h2>Strategy</h2>${recs.map(r=>`<div class="rec ${r.k}"><b>${r.h}</b>${r.d}</div>`).join('')}
+  <h2 style="margin-top:12px">Rebalance to target</h2><div class="tw"><table><tr><th>Class</th><th>Actual</th><th>Target</th><th>Drift</th><th>Action</th></tr>${CL.map((c,i)=>{const d=tgt[c]*V-cls[c];return`<tr><td>${c}</td><td>${pc(cls[c]/V)}</td><td>${pc(tgt[c])}</td><td>${sp(drift[i])}</td><td>${Math.abs(drift[i])<.02?'Hold':(d>0?'Buy ':'Sell ')+rs(Math.abs(d))}</td></tr>`}).join('')}</table></div></section>
+ <section class="c s12"><h2>Optimizer view</h2><div class="tw"><table><tr><th>Asset</th><th>Current</th><th>Max Sharpe</th><th>Change</th><th>Min variance</th></tr>${A.map((a,i)=>`<tr><td>${a[1]}</td><td>${pc(w[i])}</td><td>${pc(M.wS[i])}</td><td class="${cz(M.wS[i]-w[i])}">${sp(M.wS[i]-w[i])}</td><td>${pc(M.wM[i])}</td></tr>`).join('')}
+  <tr><th>Expected Sharpe</th><th>${M.cu.s.toFixed(2)}</th><th>${M.oS.s.toFixed(2)}</th><th></th><th>${M.oM.s.toFixed(2)}</th></tr><tr><th>Expected vol</th><th>${pc(M.cu.v)}</th><th>${pc(M.oS.v)}</th><th></th><th>${pc(M.oM.v)}</th></tr></table></div>
+  <div class="sm mut">Use as a guide for direction, not exact trades: optimizers are sensitive to return estimates, so returns are shrunk toward CAPM and each asset is capped at 25%.</div></section>
+ <section class="c s12"><h2>Holdings (edit quantity)</h2><div class="tw"><table><tr><th>Security</th><th>Class</th><th>Qty</th><th>Avg cost</th><th>Price</th><th>Value</th><th>Weight</th><th>P&amp;L</th></tr>
+  ${A.map((a,i)=>`<tr><td>${a[1]}<br><span class="mut">${a[3]}</span></td><td>${a[2]}</td><td><input type="number" min="0" step="1" value="${Q[i]}" data-i="${i}" aria-label="Quantity ${a[1]}"></td><td>${rs(P[i][a[9]])}</td><td>${rs(P[i][T])}</td><td>${rs(M.cur[i])}</td><td>${pc(w[i])}</td><td class="${cz(M.cur[i]-M.cost[i])}">${sp(M.cur[i]/(M.cost[i]||1)-1)}</td></tr>`).join('')}</table></div></section>`}
+// ---- self-tests ----
+function selfTest(){const r=[],ok=(m,c)=>r.push([m,!!c]);ok('Max drawdown of 100,120,90,110 = −25%',Math.abs(maxDD([100,120,90,110]).m+.25)<1e-12);
+ ok('XIRR of −100 then +110 after 1y = 10%',Math.abs(xirr([[0,-100],[1,110]])-.1)<1e-6);
+ const pj=pcap([.9,.5,-.2,.3],.4);ok('Capped simplex sums to 1, within [0, cap]',Math.abs(sum(pj)-1)<1e-9&&Math.max(...pj)<=.4+1e-12&&Math.min(...pj)>=0);
+ const M=compute();ok('Weights sum to 1',Math.abs(sum(M.w)-1)<1e-9);
+ ok('w′Σw equals annualised portfolio variance',Math.abs(sum(M.w.map((x,i)=>x*mv(S,M.w)[i]))-sd(M.rp)**2*N)<1e-9);
+ ok('Risk contributions sum to 100%',Math.abs(sum(M.rc)-1)<1e-9);ok('Portfolio beta equals Σ w·β',Math.abs(M.beta-sum(M.w.map((x,i)=>x*bi[i])))<1e-9);
+ ok('Max-Sharpe portfolio is not worse than current',M.oS.s>=M.cu.s-1e-9);ok('Optimizer weights obey the 25% cap',Math.max(...M.wS)<=.25+1e-9);
+ const p=r.filter(x=>x[1]).length;console.log(r.map(x=>(x[1]?'PASS ':'FAIL ')+x[0]).join('\n'));return{p,t:r.length}}
+document.addEventListener('change',e=>{const el=e.target;if(el.dataset&&el.dataset.i!==undefined){Q[+el.dataset.i]=Math.max(0,+el.value||0)}render()});
+document.addEventListener('input',e=>{if(e.target.id==='sl')render()});
+render();const tr=selfTest();$('#st').textContent=`Self-checks: ${tr.p}/${tr.t} passed`;
+</script></body></html>
